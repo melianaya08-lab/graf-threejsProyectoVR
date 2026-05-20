@@ -181,13 +181,21 @@ function exitGame(){
 
 }
 
-document.getElementById('startBtn').addEventListener('click', () => {
+document.getElementById('startBtn').addEventListener('click', async () => {
 
     // Ocultar menú
     document.getElementById('startScreen').style.display = 'none';
 
     // Mostrar UI
     document.getElementById('ui-container').style.display = 'block';
+
+    // Iniciar juego
+    window.dispatchEvent(new Event('iniciarJuego'));
+
+    // Intentar reproducir audio
+    if(window.musicaFondo && !window.musicaFondo.isPlaying){
+        window.musicaFondo.play();
+    }
 
 });
 

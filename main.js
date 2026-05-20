@@ -6,14 +6,27 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 // Importación para el botón de VR
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-let isGamePlaying = true; 
-window.addEventListener('iniciarJuego', () => {
-    isGamePlaying = true;
-    clock.start(); 
+let isGamePlaying = false; 
+window.addEventListener('iniciarJuego', async () => {
 
-    if (musicaFondo && !musicaFondo.isPlaying) {
-        musicaFondo.play();
+    isGamePlaying = true;
+
+    clock.start();
+
+    try {
+
+        if (musicaFondo && !musicaFondo.isPlaying) {
+
+            await musicaFondo.play();
+
+        }
+
+    } catch(error) {
+
+        console.log("Audio bloqueado por navegador:", error);
+
     }
+
 });
 
 let scene, camera, renderer, clock, mixer;
@@ -62,7 +75,7 @@ const puntajeFinal = document.getElementById('puntaje-final');
 init();
 
 function init() {
-    clock = new THREE.Clock();
+    clock = new THREE.Clock(false);
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0xcccccc);
     scene.fog = new THREE.Fog(0xcccccc, 15, 60);
@@ -96,7 +109,7 @@ function init() {
     scene.add(playerGroup);
 
     // En Primera Persona la cámara vive en el centro del grupo
-    camera.position.set(0, 0, 0);
+    camera.position.set(0, 1.6, 0);
     playerGroup.add(camera);
 
     // Luces
@@ -134,6 +147,7 @@ function init() {
     camera.add(listener); 
 
     musicaFondo = new THREE.Audio(listener);
+    window.musicaFondo = musicaFondo;
 
     const audioLoader = new THREE.AudioLoader();
     audioLoader.load('assets/audio.mp3', (buffer) => {
@@ -153,7 +167,7 @@ function init() {
         player = fbx;
         player.scale.set(0.015, 0.015, 0.015);
 
-        player.position.set(-0.04, -3.4, 0.87);
+        player.position.set(-0.04, -2.3, 0.87);
         playerGroup.add(player);
 
         player.rotation.y = Math.PI;
