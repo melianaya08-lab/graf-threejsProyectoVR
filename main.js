@@ -109,7 +109,7 @@ function init() {
     scene.add(playerGroup);
 
     // En Primera Persona la cámara vive en el centro del grupo
-    camera.position.set(0, 1.6, 0);
+    camera.position.set(0, 3, 0);
     playerGroup.add(camera);
 
     // Luces
@@ -167,7 +167,7 @@ function init() {
         player = fbx;
         player.scale.set(0.015, 0.015, 0.015);
 
-        player.position.set(-0.04, -2.3, 0.87);
+        player.position.set(-0.04, -2.0, 0.87);
         playerGroup.add(player);
 
         player.rotation.y = Math.PI;
