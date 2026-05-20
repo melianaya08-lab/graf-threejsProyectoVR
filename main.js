@@ -6,7 +6,7 @@ import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 // Importación para el botón de VR
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
-let isGamePlaying = false; 
+let isGamePlaying = true; 
 window.addEventListener('iniciarJuego', () => {
     isGamePlaying = true;
     clock.start(); 
@@ -153,7 +153,7 @@ function init() {
         player = fbx;
         player.scale.set(0.015, 0.015, 0.015);
 
-        player.position.set(-0.04, -3.4, 0.85);
+        player.position.set(-0.04, -3.4, 0.87);
         playerGroup.add(player);
 
         player.rotation.y = Math.PI;

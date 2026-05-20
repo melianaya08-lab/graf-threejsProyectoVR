@@ -2,70 +2,155 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Alien Runner 3D</title>
+
+<link rel="icon" href="textures/alienInicio.jpg">
 
 <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
+<!-- MENU -->
 <div id="startScreen">
+
     <div class="panel">
+
         <div class="menu">
-            <button class="btn" onclick="showSection('home')">HOME</button>
-            <button class="btn" id="startBtn">START</button>
-            <button class="btn" onclick="showSection('credits')">CREDITS</button>
-            <button class="btn" onclick="showSection('help')">HELP</button>
-            <button class="btn" onclick="exitGame()">EXIT</button>
+
+            <button class="btn" onclick="showSection('home')">
+                HOME
+            </button>
+
+            <button class="btn" id="startBtn">
+                START
+            </button>
+
+            <button class="btn" onclick="showSection('credits')">
+                CREDITS
+            </button>
+
+            <button class="btn" onclick="showSection('help')">
+                HELP
+            </button>
+
+            <button class="btn" onclick="exitGame()">
+                EXIT
+            </button>
+
         </div>
 
         <div class="content">
+
+            <!-- HOME -->
             <div id="home" class="section active">
-                <div class="title">ALIEN RUNNER</div>
-                <p class="desc">Sobrevive a la invasión alienígena</p>
+
+                <div class="title">
+                    ALIEN RUNNER
+                </div>
+
+                <p class="desc">
+                    Sobrevive a la invasión alienígena
+                </p>
+
                 <img src="textures/alienInicio.jpg" class="homeImg">
+
             </div>
 
+            <!-- CREDITS -->
             <div id="credits" class="section">
-                <div class="title">CRÉDITOS</div>
-                <p class="desc">Nelida Yareni Cruz Perez - 23200824</p>
-                <p class="desc">Melina Villa Anaya - 23200906</p>
-                <p class="desc">Carrera: Ing. Sistemas Computacionales</p>
-                <p class="desc">Materia: Graficación</p>
+
+                <div class="title">
+                    CRÉDITOS
+                </div>
+
+                <p class="desc">
+                    Nelida Yareni Cruz Perez - 23200824
+                </p>
+
+                <p class="desc">
+                    Melina Villa Anaya - 23200906
+                </p>
+
+                <p class="desc">
+                    Carrera: Ing. Sistemas Computacionales
+                </p>
+
+                <p class="desc">
+                    Materia: Graficación
+                </p>
+
             </div>
 
+            <!-- HELP -->
             <div id="help" class="section">
-                <div class="title">CONTROLES</div>
-                <p class="desc">A / D → Cambiar carril</p>
-                <p class="desc">ESPACIO → Saltar</p>
-                <p class="desc">K → Patear</p>
-                <p class="desc">MANDOS VR → Joystick lateral, triggers para acción</p>
+
+                <div class="title">
+                    CONTROLES
+                </div>
+
+                <p class="desc">
+                    A / D → Cambiar carril
+                </p>
+
+                <p class="desc">
+                    ESPACIO → Saltar
+                </p>
+
+                <p class="desc">
+                    K → Patear
+                </p>
+
+                <p class="desc">
+                    MANDOS VR → Joystick lateral, triggers para acción
+                </p>
+
             </div>
+
         </div>
+
     </div>
+
 </div>
 
+<!-- CONTENEDOR DEL JUEGO -->
 <div id="container">
 
+    <!-- UI -->
     <div id="ui-container">
-        <h2 id="texto-distancia">Metros: 0</h2>
+
+        <h2 id="texto-distancia">
+            Metros: 0
+        </h2>
 
         <div class="barra-container">
             <div id="barra-vida"></div>
         </div>
+
     </div>
 
+    <!-- GAME OVER -->
     <div id="game-over">
-        <h1>GAME OVER</h1>
-        <h2 id="puntaje-final">Metros recorridos: 0</h2>
+
+        <h1>
+            GAME OVER
+        </h1>
+
+        <h2 id="puntaje-final">
+            Metros recorridos: 0
+        </h2>
 
         <button onclick="location.reload()">
             JUGAR DE NUEVO
         </button>
+
     </div>
 
 </div>
 
+<!-- IMPORTMAP -->
 <script type="importmap">
 {
     "imports": {
@@ -75,7 +160,38 @@
 }
 </script>
 
+<!-- MAIN -->
 <script type="module" src="main.js"></script>
+
+<!-- MENU SCRIPT -->
+<script>
+
+function showSection(id){
+
+    document.querySelectorAll('.section').forEach(section => {
+        section.classList.remove('active');
+    });
+
+    document.getElementById(id).classList.add('active');
+}
+
+function exitGame(){
+
+    alert("Gracias por jugar 👽");
+
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+
+    // Ocultar menú
+    document.getElementById('startScreen').style.display = 'none';
+
+    // Mostrar UI
+    document.getElementById('ui-container').style.display = 'block';
+
+});
+
+</script>
 
 </body>
 </html>
