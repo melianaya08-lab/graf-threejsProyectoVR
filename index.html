@@ -1,7 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Alien Runner 3D</title>
@@ -9,6 +12,7 @@
 <link rel="icon" href="textures/alienInicio.jpg">
 
 <link rel="stylesheet" href="style.css">
+
 </head>
 
 <body>
@@ -115,7 +119,7 @@
 
 </div>
 
-<!-- CONTENEDOR DEL JUEGO -->
+<!-- CONTENEDOR -->
 <div id="container">
 
     <!-- UI -->
@@ -125,8 +129,16 @@
             Metros: 0
         </h2>
 
-        <div class="barra-container">
-            <div id="barra-vida"></div>
+        <div class="vida-ui">
+
+            <span class="corazon">
+                ❤️
+            </span>
+
+            <div class="barra-container">
+                <div id="barra-vida"></div>
+            </div>
+
         </div>
 
     </div>
@@ -163,7 +175,6 @@
 <!-- MAIN -->
 <script type="module" src="main.js"></script>
 
-<!-- MENU SCRIPT -->
 <script>
 
 function showSection(id){
@@ -183,16 +194,12 @@ function exitGame(){
 
 document.getElementById('startBtn').addEventListener('click', async () => {
 
-    // Ocultar menú
     document.getElementById('startScreen').style.display = 'none';
 
-    // Mostrar UI
     document.getElementById('ui-container').style.display = 'block';
 
-    // Iniciar juego
     window.dispatchEvent(new Event('iniciarJuego'));
 
-    // Intentar reproducir audio
     if(window.musicaFondo && !window.musicaFondo.isPlaying){
         window.musicaFondo.play();
     }
