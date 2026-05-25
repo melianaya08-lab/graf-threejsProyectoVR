@@ -64,6 +64,11 @@ let listener;
 let musicaFondo;
 let sonidoPatada;
 
+let hudGroup;
+let hudCanvas;
+let hudContext;
+let hudTexture;
+
 const posGlobalObstaculo = new THREE.Vector3();
 const posGlobalJugador = new THREE.Vector3();
 
@@ -126,6 +131,36 @@ function init() {
     camera.position.set(0, 2, 0);
 
     playerGroup.add(camera);
+
+    //recorrido y barra de vida
+    // =======================
+    // HUD VR
+    // =======================
+
+    hudCanvas = document.createElement('canvas');
+    hudCanvas.width = 512;
+    hudCanvas.height = 256;
+
+    hudContext = hudCanvas.getContext('2d');
+
+    hudTexture = new THREE.CanvasTexture(hudCanvas);
+
+    const hudMaterial = new THREE.MeshBasicMaterial({
+        map: hudTexture,
+        transparent: true
+    });
+
+    const hudGeometry = new THREE.PlaneGeometry(2, 1);
+
+    const hudMesh = new THREE.Mesh(hudGeometry, hudMaterial);
+
+    hudGroup = new THREE.Group();
+
+    hudMesh.position.set(0, -0.7, -2);
+
+    hudGroup.add(hudMesh);
+
+    camera.add(hudGroup);
 
     // LUCES
 
@@ -540,6 +575,37 @@ function spawnDecoration() {
 
 }
 
+function actualizarHUDVR() {
+
+    if (!hudContext) return;
+
+    // Fondo transparente
+    hudContext.clearRect(0, 0, 512, 256);
+
+    // Fondo negro semi transparente
+    hudContext.fillStyle = "rgba(0,0,0,0.6)";
+    hudContext.fillRect(20, 20, 470, 120);
+
+    // Texto
+    hudContext.fillStyle = "white";
+    hudContext.font = "40px Arial";
+
+    hudContext.fillText(
+        "Metros: " + Math.floor(distancia),
+        40,
+        80
+    );
+
+    // Barra vida
+    hudContext.fillStyle = "gray";
+    hudContext.fillRect(40, 120, 300, 30);
+
+    hudContext.fillStyle = "red";
+    hudContext.fillRect(40, 120, vida * 3, 30);
+
+    hudTexture.needsUpdate = true;
+}
+
 function handleVRInput() {
 
     const session =
@@ -627,6 +693,8 @@ function animate() {
 
     textoDistancia.innerText =
         `Metros: ${Math.floor(distancia)}`;
+
+        actualizarHUDVR();
 
     if (mixer)
         mixer.update(delta);
