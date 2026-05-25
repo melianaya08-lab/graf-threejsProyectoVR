@@ -156,7 +156,8 @@ function init() {
 
     hudGroup = new THREE.Group();
 
-    hudMesh.position.set(0, -0.7, -2);
+    hudMesh.position.set(0, -0.3, -2);
+    //hudMesh.position.set(0, 0, -2);
 
     hudGroup.add(hudMesh);
 
@@ -249,7 +250,7 @@ function init() {
 
         musicaFondo.setLoop(true);
 
-        musicaFondo.setVolume(0.7);
+        musicaFondo.setVolume(0.8);
 
     });
 
@@ -277,7 +278,7 @@ function init() {
 
         player.position.set(
             -0.04,
-            0,
+            1,
             0.87
         );
 
@@ -512,20 +513,25 @@ function recibirDano() {
 
         isGameOver = true;
 
+        // Salir de VR automáticamente
+        const session = renderer.xr.getSession();
+
+        if (session) {
+
+            session.end();
+
+        }
+
         pantallaGameOver.style.display = 'flex';
 
         puntajeFinal.innerText =
             `Metros recorridos: ${Math.floor(distancia)}`;
 
-        if (
-            musicaFondo &&
-            musicaFondo.isPlaying
-        ) {
+        if (musicaFondo && musicaFondo.isPlaying) {
 
             musicaFondo.stop();
 
         }
-
     }
 
 }
