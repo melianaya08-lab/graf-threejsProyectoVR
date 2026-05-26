@@ -128,7 +128,7 @@ function init() {
 
     scene.add(playerGroup);
 
-    camera.position.set(0, 2, 0);
+    camera.position.set(0, 5, 0);
 
     playerGroup.add(camera);
 
@@ -156,7 +156,7 @@ function init() {
 
     hudGroup = new THREE.Group();
 
-    hudMesh.position.set(0, -0.3, -2);
+    hudMesh.position.set(0, 0, -2);
     //hudMesh.position.set(0, 0, -2);
 
     hudGroup.add(hudMesh);
@@ -278,7 +278,7 @@ function init() {
 
         player.position.set(
             -0.04,
-            1,
+            0,
             0.87
         );
 
