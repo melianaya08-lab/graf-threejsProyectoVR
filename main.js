@@ -156,7 +156,7 @@ function init() {
 
     hudGroup = new THREE.Group();
 
-    hudMesh.position.set(0, 3, -2);
+    hudMesh.position.set(0, -0.9, -2);
     //hudMesh.position.set(0, 0, -2);
 
     hudGroup.add(hudMesh);
