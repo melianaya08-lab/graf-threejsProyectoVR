@@ -126,7 +126,7 @@ function init() {
 
     playerGroup = new THREE.Group();
 
-    playerGroup.position.set(0, -1.5, 12);
+    playerGroup.position.set(0, -0.2, 12);
 
     scene.add(playerGroup);
 
