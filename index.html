@@ -199,38 +199,15 @@ function exitGame(){
 
 document.getElementById('startBtn').addEventListener('click', async () => {
 
-    // Ocultar menú
-    document.getElementById('startScreen').style.display = 'none';
+document.getElementById('startScreen').style.display = 'none';
 
-    // Mostrar HUD
-    document.getElementById('ui-container').style.display = 'block';
+document.getElementById('ui-container').style.display = 'block';
 
-    // Iniciar lógica del juego
-    window.dispatchEvent(new Event('iniciarJuego'));
+window.dispatchEvent(new Event('iniciarJuego'));
 
-    // Iniciar música
-    if(window.musicaFondo && !window.musicaFondo.isPlaying){
-
+if(window.musicaFondo && !window.musicaFondo.isPlaying){
         window.musicaFondo.play();
-
     }
-
-    // Entrar automáticamente a VR
-    setTimeout(() => {
-
-        const buttons = document.querySelectorAll('button');
-
-        buttons.forEach(btn => {
-
-            if(btn.textContent.includes('VR')){
-
-                btn.click();
-
-            }
-
-        });
-
-    }, 500);
 
 });
 
