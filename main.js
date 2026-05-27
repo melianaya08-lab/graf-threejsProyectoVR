@@ -128,7 +128,7 @@ function init() {
 
     scene.add(playerGroup);
 
-    camera.position.set(0, 1.7, 0);
+    camera.position.set(0, 2, 0);
 
     playerGroup.add(camera);
 
