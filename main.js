@@ -4,13 +4,32 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { VRButton } from 'three/addons/webxr/VRButton.js';
 
+let isGamePlaying = false;
+
+window.addEventListener('iniciarJuego', async () => {
+
+    isGamePlaying = true;
+
+    clock.start();
+
+    try {
+
+        if (musicaFondo && !musicaFondo.isPlaying) {
+            await musicaFondo.play();
+        }
+
+    } catch(error) {
+
+        console.log("Audio bloqueado:", error);
+
+    }
+
+});
+
 let scene, camera, renderer, clock, mixer;
+let player, floor, actions = {}, currentAction;
 
-let player;
-let floor;
-
-let actions = {};
-let currentAction;
+let gameSpeed = 35;
 
 let obstacles = [];
 let decorations = [];
@@ -20,64 +39,55 @@ let alienAnimClip;
 
 let playerGroup;
 
-let gameSpeed = 35;
-
 let currentLane = 1;
+
 const lanes = [-4, 0, 4];
 
 let targetX = 0;
 
 let isKicking = false;
 
-let controllerLeft;
-let controllerRight;
+let isJumping = false;
+let jumpVelocity = 0;
+
+const gravity = -55;
+const jumpHeight = 18;
+
+let controllerLeft, controllerRight;
 let canMoveVR = true;
 
 let distancia = 0;
 let vida = 100;
-
 let isGameOver = false;
-let isGamePlaying = false;
 
 let listener;
 let musicaFondo;
 let sonidoPatada;
 
+let hudGroup;
 let hudCanvas;
 let hudContext;
 let hudTexture;
-let hudMesh;
-let hudGroup;
 
 const posGlobalObstaculo = new THREE.Vector3();
 const posGlobalJugador = new THREE.Vector3();
 
+const textoDistancia = document.getElementById('texto-distancia');
+const barraVida = document.getElementById('barra-vida');
 const pantallaGameOver = document.getElementById('game-over');
 const puntajeFinal = document.getElementById('puntaje-final');
-
-window.addEventListener('iniciarJuego', () => {
-
-    isGamePlaying = true;
-
-    clock.start();
-
-    if (musicaFondo && !musicaFondo.isPlaying) {
-        musicaFondo.play();
-    }
-
-});
 
 init();
 
 function init() {
 
-    clock = new THREE.Clock();
+    clock = new THREE.Clock(false);
 
     scene = new THREE.Scene();
 
-    scene.background = new THREE.Color(0x000000);
+    scene.background = new THREE.Color(0xcccccc);
 
-    scene.fog = new THREE.Fog(0x000000, 15, 80);
+    scene.fog = new THREE.Fog(0xcccccc, 15, 60);
 
     camera = new THREE.PerspectiveCamera(
         75,
@@ -97,7 +107,16 @@ function init() {
     renderer.xr.enabled = true;
 
     document.body.appendChild(
-        VRButton.createButton(renderer)
+        VRButton.createButton(renderer, {
+            optionalFeatures: [
+                'local-floor',
+                'bounded-floor',
+                'dom-overlay'
+            ],
+            domOverlay: {
+                root: document.getElementById('container')
+            }
+        })
     );
 
     document.getElementById('container')
@@ -109,16 +128,19 @@ function init() {
 
     scene.add(playerGroup);
 
-    // CAMARA
-    camera.position.set(0, 1.6, 0);
+    camera.position.set(0, 5, 0);
+    camera.position.set(0, 1.7, 0);
 
     playerGroup.add(camera);
 
+    //recorrido y barra de vida
+    // =======================
     // HUD VR
-    hudCanvas = document.createElement('canvas');
+    // =======================
 
-    hudCanvas.width = 1024;
-    hudCanvas.height = 512;
+    hudCanvas = document.createElement('canvas');
+    hudCanvas.width = 512;
+    hudCanvas.height = 256;
 
     hudContext = hudCanvas.getContext('2d');
 
@@ -129,22 +151,21 @@ function init() {
         transparent: true
     });
 
-    const hudGeometry = new THREE.PlaneGeometry(1.2, 0.6);
+    const hudGeometry = new THREE.PlaneGeometry(2, 1);
 
-    hudMesh = new THREE.Mesh(
-        hudGeometry,
-        hudMaterial
-    );
+    const hudMesh = new THREE.Mesh(hudGeometry, hudMaterial);
 
     hudGroup = new THREE.Group();
 
-    hudMesh.position.set(0, 2.5, -5);
+    hudMesh.position.set(0, 1.5, -3);
+    //hudMesh.position.set(0, 0, -2);
 
     hudGroup.add(hudMesh);
 
     camera.add(hudGroup);
 
     // LUCES
+
     const light = new THREE.DirectionalLight(
         0xffffff,
         1.5
@@ -157,17 +178,14 @@ function init() {
     scene.add(light);
 
     scene.add(
-        new THREE.AmbientLight(
-            0xffffff,
-            0.6
-        )
+        new THREE.AmbientLight(0xffffff, 0.6)
     );
 
     // SUELO
+
     const textureLoader = new THREE.TextureLoader();
 
-    const floorMat =
-        new THREE.MeshStandardMaterial({
+    const floorMat = new THREE.MeshStandardMaterial({
 
         map: textureLoader.load(
             'textures/suelo_obscuro.jpg'
@@ -176,8 +194,6 @@ function init() {
     });
 
     floorMat.map.wrapS =
-        THREE.RepeatWrapping;
-
     floorMat.map.wrapT =
         THREE.RepeatWrapping;
 
@@ -198,61 +214,59 @@ function init() {
     scene.add(floor);
 
     // HDR
+
     new RGBELoader()
-
         .setPath('textures/')
-
         .load('ambiente.hdr', (texture) => {
 
             texture.mapping =
                 THREE.EquirectangularReflectionMapping;
 
+            scene.background = texture;
             scene.environment = texture;
 
         });
 
+    // LOADER
+
+    const loader = new FBXLoader();
+
+    loader.setPath('./assets/');
+
     // AUDIO
+
     listener = new THREE.AudioListener();
 
     camera.add(listener);
 
     musicaFondo = new THREE.Audio(listener);
 
-    sonidoPatada = new THREE.Audio(listener);
+    window.musicaFondo = musicaFondo;
 
     const audioLoader = new THREE.AudioLoader();
 
-    audioLoader.load(
-        'assets/audio.mp3',
-        (buffer) => {
+    audioLoader.load('assets/audio.mp3', (buffer) => {
 
-            musicaFondo.setBuffer(buffer);
+        musicaFondo.setBuffer(buffer);
 
-            musicaFondo.setLoop(true);
+        musicaFondo.setLoop(true);
 
-            musicaFondo.setVolume(0.5);
+        musicaFondo.setVolume(0.8);
 
-        }
-    );
+    });
 
-    audioLoader.load(
-        'assets/patada.mp3',
-        (buffer) => {
+    sonidoPatada = new THREE.Audio(listener);
 
-            sonidoPatada.setBuffer(buffer);
+    audioLoader.load('assets/patada.mp3', (buffer) => {
 
-            sonidoPatada.setVolume(1);
+        sonidoPatada.setBuffer(buffer);
 
-        }
-    );
+        sonidoPatada.setVolume(0.6);
 
-    window.musicaFondo = musicaFondo;
-
-    const loader = new FBXLoader();
-
-    loader.setPath('./assets/');
+    });
 
     // PLAYER
+
     loader.load('Running.fbx', (fbx) => {
 
         player = fbx;
@@ -271,44 +285,29 @@ function init() {
 
         player.rotation.y = Math.PI;
 
-        player.traverse((c) => {
+        player.traverse(c => {
 
-            if (c.isMesh) {
-
+            if (c.isMesh)
                 c.castShadow = true;
-
-            }
 
         });
 
         playerGroup.add(player);
 
+        targetX = lanes[currentLane];
+
         mixer = new THREE.AnimationMixer(player);
 
-        loadAnim(
-            loader,
-            'Running.fbx',
-            'correr',
-            true
-        );
+        loadAnim(loader, 'Running.fbx', 'correr', true);
 
-        loadAnim(
-            loader,
-            'BigJump.fbx',
-            'saltar',
-            false
-        );
+        loadAnim(loader, 'BigJump.fbx', 'saltar', false);
 
-        loadAnim(
-            loader,
-            'Martelo2.fbx',
-            'patada',
-            false
-        );
+        loadAnim(loader, 'Martelo2.fbx', 'patada', false);
 
     });
 
     // ALIEN
+
     loader.load('AlienAttack.fbx', (fbx) => {
 
         alienModel = fbx;
@@ -324,12 +323,11 @@ function init() {
             fbx.animations.length > 0
         ) {
 
-            alienAnimClip =
-                fbx.animations[0];
+            alienAnimClip = fbx.animations[0];
 
         }
 
-        alienModel.traverse((c) => {
+        alienModel.traverse(c => {
 
             if (c.isMesh) {
 
@@ -347,19 +345,19 @@ function init() {
 
         setTimeout(() => {
 
-            if (!isGameOver)
+            if (isGamePlaying && !isGameOver)
                 spawnObstacle();
 
         }, 2000);
 
         setTimeout(() => {
 
-            if (!isGameOver)
+            if (isGamePlaying && !isGameOver)
                 spawnObstacle();
 
         }, 4000);
 
-        for (let i = 0; i < 2; i++) {
+        for(let i = 0; i < 2; i++) {
 
             spawnDecoration();
 
@@ -367,43 +365,34 @@ function init() {
 
     });
 
-    // TECLADO
-    window.addEventListener(
-        'keydown',
-        onKeyDown
-    );
+    window.addEventListener('keydown', onKeyDown);
 
     // CONTROLES VR
-    controllerLeft =
-        renderer.xr.getController(0);
+
+    controllerLeft = renderer.xr.getController(0);
 
     scene.add(controllerLeft);
 
-    controllerRight =
-        renderer.xr.getController(1);
+    controllerRight = renderer.xr.getController(1);
 
     scene.add(controllerRight);
 
-    controllerLeft.addEventListener(
-        'selectstart',
-        () => {
-
-            fadeToAction(
-                'saltar',
-                0.1
-            );
-
-        }
-    );
+    renderer.xr.setReferenceSpaceType('local-floor');
 
     controllerRight.addEventListener(
         'selectstart',
         () => {
 
-            fadeToAction(
-                'patada',
-                0.1
-            );
+            fadeToAction('patada', 0.1);
+
+        }
+    );
+
+    controllerLeft.addEventListener(
+        'selectstart',
+        () => {
+
+            fadeToAction('saltar', 0.1);
 
         }
     );
@@ -420,28 +409,22 @@ function spawnObstacle() {
         SkeletonUtils.clone(alienModel);
 
     newAlien.position.x =
-        lanes[
-            Math.floor(
-                Math.random() * 3
-            )
-        ];
+        lanes[Math.floor(Math.random() * 3)];
 
     newAlien.position.z =
         -Math.random() * 80 - 30;
+
+    newAlien.rotation.y = 0;
 
     let alienMixer = null;
 
     if (alienAnimClip) {
 
         alienMixer =
-            new THREE.AnimationMixer(
-                newAlien
-            );
+            new THREE.AnimationMixer(newAlien);
 
         const action =
-            alienMixer.clipAction(
-                alienAnimClip
-            );
+            alienMixer.clipAction(alienAnimClip);
 
         action.play();
 
@@ -458,39 +441,6 @@ function spawnObstacle() {
     scene.add(newAlien);
 
     obstacles.push(newAlien);
-
-}
-
-function spawnDecoration() {
-
-    const geometry =
-        new THREE.DodecahedronGeometry(
-            0.6
-        );
-
-    const material =
-        new THREE.MeshStandardMaterial({
-
-        color: 0x555555
-
-    });
-
-    const rock = new THREE.Mesh(
-        geometry,
-        material
-    );
-
-    rock.position.x =
-        (Math.random() - 0.5) * 18;
-
-    rock.position.y = 0.3;
-
-    rock.position.z =
-        -Math.random() * 150 - 20;
-
-    scene.add(rock);
-
-    decorations.push(rock);
 
 }
 
@@ -526,19 +476,13 @@ function onKeyDown(event) {
 
         case 'Space':
 
-            fadeToAction(
-                'saltar',
-                0.1
-            );
+            fadeToAction('saltar', 0.1);
 
             break;
 
         case 'KeyK':
 
-            fadeToAction(
-                'patada',
-                0.1
-            );
+            fadeToAction('patada', 0.1);
 
             break;
 
@@ -556,35 +500,117 @@ function recibirDano() {
 
     vida -= 25;
 
+    barraVida.style.width = vida + '%';
+
+    barraVida.style.backgroundColor = 'white';
+
+    setTimeout(() => {
+
+        barraVida.style.backgroundColor = '#ff3333';
+
+    }, 150);
+
     if (vida <= 0) {
 
         isGameOver = true;
 
-        pantallaGameOver.style.display =
-            'flex';
+        // Salir de VR automáticamente
+        const session = renderer.xr.getSession();
+
+        if (session) {
+
+            session.end();
+
+        }
+
+        pantallaGameOver.style.display = 'flex';
 
         puntajeFinal.innerText =
             `Metros recorridos: ${Math.floor(distancia)}`;
 
-        if (
-            musicaFondo &&
-            musicaFondo.isPlaying
-        ) {
+        if (musicaFondo && musicaFondo.isPlaying) {
 
             musicaFondo.stop();
 
         }
-
-        if (renderer.xr.isPresenting) {
-
-            renderer.xr
-                .getSession()
-                .end();
-
-        }
-
     }
 
+}
+
+function spawnDecoration() {
+
+    const size = 0.6;
+
+    const geometry =
+        new THREE.DodecahedronGeometry(size);
+
+    const material =
+        new THREE.MeshStandardMaterial({
+
+            color: 0x555555,
+            roughness: 0.9,
+            metalness: 0.1
+
+        });
+
+    const rock = new THREE.Mesh(
+        geometry,
+        material
+    );
+
+    rock.position.x =
+        (Math.random() - 0.5) * 18;
+
+    rock.position.y = size / 2;
+
+    rock.position.z =
+        -Math.random() * 150 - 20;
+
+    rock.rotation.set(
+        Math.random() * Math.PI,
+        Math.random() * Math.PI,
+        0
+    );
+
+    rock.castShadow = true;
+
+    rock.receiveShadow = true;
+
+    scene.add(rock);
+
+    decorations.push(rock);
+
+}
+
+function actualizarHUDVR() {
+
+    if (!hudContext) return;
+
+    // Fondo transparente
+    hudContext.clearRect(0, 0, 512, 256);
+
+    // Fondo negro semi transparente
+    hudContext.fillStyle = "rgba(0,0,0,0.6)";
+    hudContext.fillRect(20, 20, 470, 120);
+
+    // Texto
+    hudContext.fillStyle = "white";
+    hudContext.font = "40px Arial";
+
+    hudContext.fillText(
+        "Metros: " + Math.floor(distancia),
+        40,
+        80
+    );
+
+    // Barra vida
+    hudContext.fillStyle = "gray";
+    hudContext.fillRect(40, 120, 300, 30);
+
+    hudContext.fillStyle = "red";
+    hudContext.fillRect(40, 120, vida * 3, 30);
+
+    hudTexture.needsUpdate = true;
 }
 
 function handleVRInput() {
@@ -598,16 +624,11 @@ function handleVRInput() {
 
         if (!source.gamepad) continue;
 
-        const axes =
-            source.gamepad.axes;
+        const axes = source.gamepad.axes;
 
-        const stickX =
-            axes[2] || axes[0];
+        const stickX = axes[2] || axes[0];
 
-        if (
-            Math.abs(stickX) > 0.5 &&
-            canMoveVR
-        ) {
+        if (Math.abs(stickX) > 0.5) {
 
             if (
                 stickX < -0.5 &&
@@ -617,6 +638,14 @@ function handleVRInput() {
                 currentLane--;
 
                 movePlayer();
+
+                canMoveVR = false;
+
+                setTimeout(() => {
+
+                    canMoveVR = true;
+
+                }, 300);
 
             }
 
@@ -629,15 +658,15 @@ function handleVRInput() {
 
                 movePlayer();
 
+                canMoveVR = false;
+
+                setTimeout(() => {
+
+                    canMoveVR = true;
+
+                }, 300);
+
             }
-
-            canMoveVR = false;
-
-            setTimeout(() => {
-
-                canMoveVR = true;
-
-            }, 300);
 
         }
 
@@ -645,62 +674,15 @@ function handleVRInput() {
 
 }
 
-function updateHUD() {
-
-    hudContext.clearRect(
-        0,
-        0,
-        hudCanvas.width,
-        hudCanvas.height
-    );
-
-    hudContext.fillStyle =
-        'rgba(0,0,0,0.5)';
-
-    hudContext.fillRect(
-        0,
-        0,
-        hudCanvas.width,
-        hudCanvas.height
-    );
-
-    hudContext.fillStyle = 'white';
-
-    hudContext.font =
-        'bold 60px Arial';
-
-    hudContext.fillText(
-        `Metros: ${Math.floor(distancia)}`,
-        50,
-        100
-    );
-
-    hudContext.fillStyle = 'red';
-
-    hudContext.fillRect(
-        50,
-        180,
-        vida * 8,
-        50
-    );
-
-    hudTexture.needsUpdate = true;
-
-}
-
 function animate() {
 
-    if (!isGamePlaying) {
+    if (!isGamePlaying || isGameOver) {
 
         renderer.render(scene, camera);
 
         return;
 
     }
-
-    const delta = clock.getDelta();
-
-    if (mixer) mixer.update(delta);
 
     if (
         renderer.xr.isPresenting &&
@@ -711,14 +693,54 @@ function animate() {
 
     }
 
+    const delta = clock.getDelta();
+
     distancia +=
         (gameSpeed * delta) * 0.2;
 
-    updateHUD();
+    textoDistancia.innerText =
+        `Metros: ${Math.floor(distancia)}`;
 
-    playerGroup.position.x +=
-        (targetX - playerGroup.position.x)
-        * 10 * delta;
+        actualizarHUDVR();
+
+    if (mixer)
+        mixer.update(delta);
+
+    // MOVIMIENTO
+
+    if (player) {
+
+        playerGroup.position.x +=
+            (targetX - playerGroup.position.x)
+            * 10 * delta;
+
+        // SALTO
+
+        if (isJumping) {
+
+            playerGroup.position.y +=
+                jumpVelocity * delta;
+
+            jumpVelocity +=
+                gravity * delta;
+
+            if (
+                playerGroup.position.y <= 0
+            ) {
+
+                playerGroup.position.y = 0;
+
+                isJumping = false;
+
+                jumpVelocity = 0;
+
+            }
+
+        }
+
+    }
+
+    // SUELO
 
     if (
         floor &&
@@ -730,6 +752,8 @@ function animate() {
 
     }
 
+    // DECORACIONES
+
     decorations.forEach((dec) => {
 
         dec.position.z +=
@@ -740,20 +764,28 @@ function animate() {
             playerGroup.position.z + 5
         ) {
 
+            dec.position.x =
+                (Math.random() - 0.5) * 18;
+
             dec.position.z =
                 playerGroup.position.z - 100;
+
+            dec.rotation.set(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                0
+            );
 
         }
 
     });
 
+    // OBSTÁCULOS
+
     obstacles.forEach((obs) => {
 
-        if (obs.userData.mixer) {
-
+        if (obs.userData.mixer)
             obs.userData.mixer.update(delta);
-
-        }
 
         if (!obs.userData.kicked) {
 
@@ -768,12 +800,28 @@ function animate() {
                 posGlobalJugador
             );
 
-            const dist =
-                posGlobalObstaculo.distanceTo(
-                    posGlobalJugador
-                );
+            const distX = Math.abs(
+                posGlobalObstaculo.x -
+                posGlobalJugador.x
+            );
 
-            if (dist < 2) {
+            const distY = Math.abs(
+                posGlobalObstaculo.y -
+                posGlobalJugador.y
+            );
+
+            const distZ = Math.abs(
+                posGlobalObstaculo.z -
+                posGlobalJugador.z
+            );
+
+            if (
+
+                distX < 1.5 &&
+                distY < 2.5 &&
+                distZ < 1.8
+
+            ) {
 
                 if (isKicking) {
 
@@ -781,14 +829,9 @@ function animate() {
 
                 }
 
-                else if (
-                    currentAction !==
-                    actions['saltar']
-                ) {
+                else if (!isJumping) {
 
-                    if (
-                        !obs.userData.crashed
-                    ) {
+                    if (!obs.userData.crashed) {
 
                         obs.userData.crashed = true;
 
@@ -804,26 +847,22 @@ function animate() {
 
         else {
 
-            obs.position.z -=
-                60 * delta;
+            obs.position.z -= 60 * delta;
 
-            obs.position.y +=
-                40 * delta;
+            obs.position.y += 40 * delta;
 
         }
 
         if (
             obs.position.z >
-            playerGroup.position.z + 5
+            playerGroup.position.z + 5 ||
+
+            obs.position.y > 60
         ) {
 
             obs.position.set(
 
-                lanes[
-                    Math.floor(
-                        Math.random() * 3
-                    )
-                ],
+                lanes[Math.floor(Math.random() * 3)],
 
                 0,
 
@@ -843,25 +882,16 @@ function animate() {
 
 }
 
-function loadAnim(
-    loader,
-    file,
-    name,
-    loop
-) {
+function loadAnim(loader, file, name, loop) {
 
     loader.load(file, (anim) => {
 
         const action =
-            mixer.clipAction(
-                anim.animations[0]
-            );
+            mixer.clipAction(anim.animations[0]);
 
         if (!loop) {
 
-            action.setLoop(
-                THREE.LoopOnce
-            );
+            action.setLoop(THREE.LoopOnce);
 
             action.clampWhenFinished = true;
 
@@ -900,21 +930,33 @@ function fadeToAction(name, duration) {
         .fadeIn(duration)
         .play();
 
+    // PATADA
+
     if (name === 'patada') {
 
         isKicking = true;
 
         if (sonidoPatada) {
 
-            if (sonidoPatada.isPlaying) {
-
+            if (sonidoPatada.isPlaying)
                 sonidoPatada.stop();
-
-            }
 
             sonidoPatada.play();
 
         }
+
+    }
+
+    // SALTO
+
+    if (
+        name === 'saltar' &&
+        !isJumping
+    ) {
+
+        isJumping = true;
+
+        jumpVelocity = jumpHeight;
 
     }
 
@@ -933,10 +975,7 @@ function fadeToAction(name, duration) {
 
             }
 
-            fadeToAction(
-                'correr',
-                0.2
-            );
+            fadeToAction('correr', 0.2);
 
         };
 
@@ -948,18 +987,3 @@ function fadeToAction(name, duration) {
     }
 
 }
-
-window.addEventListener('resize', () => {
-
-    camera.aspect =
-        window.innerWidth /
-        window.innerHeight;
-
-    camera.updateProjectionMatrix();
-
-    renderer.setSize(
-        window.innerWidth,
-        window.innerHeight
-    );
-
-});
