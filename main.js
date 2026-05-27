@@ -124,22 +124,14 @@ function init() {
 
     playerGroup = new THREE.Group();
 
-    playerGroup = new THREE.Group();
 
-    playerGroup.position.set(0, -0.2, 12);
+    playerGroup.position.set(0, -2, 12);
 
     scene.add(playerGroup);
 
-    camera = new THREE.PerspectiveCamera(
-        75,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-    );
+    camera.position.set(0, 5, 0.2);
 
     playerGroup.add(camera);
-
-
 
     //recorrido y barra de vida
     // =======================
