@@ -4,13 +4,11 @@
 <head>
 
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <title>Alien Runner 3D</title>
 
 <link rel="icon" href="textures/alienInicio.jpg">
-
 <link rel="stylesheet" href="style.css">
 
 </head>
@@ -119,51 +117,24 @@
 
 </div>
 
-<!-- CONTENEDOR -->
-
-
+<!-- CONTENEDOR DEL JUEGO -->
 <div id="container">
-<!--
-    <div id="ui-container">
-
-        <h2 id="texto-distancia">
-            Metros: 0
-        </h2>
-
-        <div class="vida-ui">
-
-            <span class="corazon">
-                ❤️
-            </span>
-
-            <div class="barra-container">
-                <div id="barra-vida"></div>
-            </div>
-
-        </div>
-
-    </div>
--->
 </div>
 
-        
+<!-- GAME OVER -->
+<div id="game-over">
 
-    <!-- GAME OVER -->
-    <div id="game-over">
+    <h1>
+        GAME OVER
+    </h1>
 
-        <h1>
-            GAME OVER
-        </h1>
+    <h2 id="puntaje-final">
+        Metros recorridos: 0
+    </h2>
 
-        <h2 id="puntaje-final">
-            Metros recorridos: 0
-        </h2>
-
-        <button onclick="location.reload()">
-            JUGAR DE NUEVO
-        </button>
-
-    </div>
+    <button onclick="location.reload()">
+        JUGAR DE NUEVO
+    </button>
 
 </div>
 
@@ -180,6 +151,7 @@
 <!-- MAIN -->
 <script type="module" src="main.js"></script>
 
+<!-- MENU SCRIPT -->
 <script>
 
 function showSection(id){
@@ -199,13 +171,14 @@ function exitGame(){
 
 document.getElementById('startBtn').addEventListener('click', async () => {
 
-document.getElementById('startScreen').style.display = 'none';
+    // Ocultar menú
+    document.getElementById('startScreen').style.display = 'none';
 
-document.getElementById('ui-container').style.display = 'block';
+    // Iniciar juego
+    window.dispatchEvent(new Event('iniciarJuego'));
 
-window.dispatchEvent(new Event('iniciarJuego'));
-
-if(window.musicaFondo && !window.musicaFondo.isPlaying){
+    // Música
+    if(window.musicaFondo && !window.musicaFondo.isPlaying){
         window.musicaFondo.play();
     }
 
